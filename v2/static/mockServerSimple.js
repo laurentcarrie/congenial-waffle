@@ -13,10 +13,10 @@ ServerSideDatasource.prototype.getRows = function(params) {
     var doingTopLevel = groupKeys.length === 0;
 
     if (doingTopLevel) {
-        this.fakeServer.getTopLevelCountryList(successCallback, request);
+        this.fakeServer.getTopLevelCarMakerList(successCallback, request);
     } else {
-        var country = request.groupKeys[0];
-        this.fakeServer.getCountryDetails(successCallback, country, request);
+        var CarMaker = request.groupKeys[0];
+        this.fakeServer.getCarMakerDetails(successCallback, CarMaker, request);
     }
 
     function successCallback(resultForGrid, lastRow) {
@@ -29,39 +29,39 @@ function FakeServer(allData) {
 }
 
 FakeServer.prototype.initData = function(allData) {
-    var topLevelCountryGroups = [];
-    var bottomLevelCountryDetails = {}; // will be a map of [country name => records]
+    var topLevelCarMakerGroups = [];
+    var bottomLevelCarMakerDetails = {}; // will be a map of [CarMaker name => records]
 
     allData.forEach( function(dataItem) {
-        // get country this item is for
-        var country = dataItem.country;
+        // get CarMaker this item is for
+        var CarMaker = dataItem.CarMaker;
 
-        // get the top level group for this country
-        var childrenThisCountry = bottomLevelCountryDetails[country];
-        var groupThisCountry = _.find(topLevelCountryGroups, {country: country});
-        if (!childrenThisCountry) {
+        // get the top level group for this CarMaker
+        var childrenThisCarMaker = bottomLevelCarMakerDetails[CarMaker];
+        var groupThisCarMaker = _.find(topLevelCarMakerGroups, {CarMaker: CarMaker});
+        if (!childrenThisCarMaker) {
             // no group exists yet, so create it
-            childrenThisCountry = [];
-            bottomLevelCountryDetails[country] = childrenThisCountry;
+            childrenThisCarMaker = [];
+            bottomLevelCarMakerDetails[CarMaker] = childrenThisCarMaker;
 
             // add a group to the top level
-            groupThisCountry = {country: country, gold: 0, silver: 0, bronze: 0};
-            topLevelCountryGroups.push(groupThisCountry);
+            groupThisCarMaker = {CarMaker: CarMaker, gold: 0, silver: 0, bronze: 0};
+            topLevelCarMakerGroups.push(groupThisCarMaker);
         }
 
         // add this record to the county group
-        childrenThisCountry.push(dataItem);
+        childrenThisCarMaker.push(dataItem);
 
         // increment the group sums
-        groupThisCountry.gold += dataItem.gold;
-        groupThisCountry.silver += dataItem.silver;
-        groupThisCountry.bronze += dataItem.bronze;
+        groupThisCarMaker.gold += dataItem.gold;
+        groupThisCarMaker.silver += dataItem.silver;
+        groupThisCarMaker.bronze += dataItem.bronze;
     });
 
-    this.topLevelCountryGroups = topLevelCountryGroups;
-    this.bottomLevelCountryDetails = bottomLevelCountryDetails;
+    this.topLevelCarMakerGroups = topLevelCarMakerGroups;
+    this.bottomLevelCarMakerDetails = bottomLevelCarMakerDetails;
 
-    this.topLevelCountryGroups.sort(function(a,b) { return a.country < b.country ? -1 : 1; });
+    this.topLevelCarMakerGroups.sort(function(a,b) { return a.CarMaker < b.CarMaker ? -1 : 1; });
 };
 
 FakeServer.prototype.sortList = function(data, sortModel) {
@@ -94,10 +94,10 @@ FakeServer.prototype.sortList = function(data, sortModel) {
 };
 
 // when looking for the top list, always return back the full list of countries
-FakeServer.prototype.getTopLevelCountryList = function(callback, request) {
+FakeServer.prototype.getTopLevelCarMakerList = function(callback, request) {
 
-    var lastRow = this.getLastRowResult(this.topLevelCountryGroups, request);
-    var rowData = this.getBlockFromResult(this.topLevelCountryGroups, request);
+    var lastRow = this.getLastRowResult(this.topLevelCarMakerGroups, request);
+    var rowData = this.getBlockFromResult(this.topLevelCarMakerGroups, request);
 
     // put the response into a timeout, so it looks like an async call from a server
     setTimeout( function() {
@@ -105,14 +105,14 @@ FakeServer.prototype.getTopLevelCountryList = function(callback, request) {
     }, 1000);
 };
 
-FakeServer.prototype.getCountryDetails = function(callback, country, request) {
+FakeServer.prototype.getCarMakerDetails = function(callback, CarMaker, request) {
 
-    var countryDetails = this.bottomLevelCountryDetails[country];
+    var CarMakerDetails = this.bottomLevelCarMakerDetails[CarMaker];
 
-    var countryDetailsSorted = this.sortList(countryDetails, request.sortModel);
+    var CarMakerDetailsSorted = this.sortList(CarMakerDetails, request.sortModel);
 
-    var lastRow = this.getLastRowResult(countryDetailsSorted, request);
-    var rowData = this.getBlockFromResult(countryDetailsSorted, request);
+    var lastRow = this.getLastRowResult(CarMakerDetailsSorted, request);
+    var rowData = this.getBlockFromResult(CarMakerDetailsSorted, request);
 
     // put the response into a timeout, so it looks like an async call from a server
     setTimeout( function() {

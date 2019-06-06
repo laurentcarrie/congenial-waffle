@@ -34,6 +34,30 @@ def display():
     page = render_template('index.html')
     return page
 
+@app.route('/getRows', methods=['POST'])
+def getRows():
+    j = request.get_json()
+    startRow = j['startRow']
+    endRow = j['endRow']
+
+    # sample = app.db.find({"price": {"$lt": 10000.1}},limit=limit)
+    sample = app.db.cars.find(limit=endRow)
+
+    # data = json.dumps(data)
+    # return flask.Response(flask.stream_with_context(generate()))
+    def generate():
+        yield '['
+        not_first = False
+        for s in sample:
+            if not_first:
+                yield ','
+            not_first = True
+            yield json.dumps(Car(s).to_dict())
+        yield ']'
+
+    return Response(generate(), mimetype="text/json")
+
+
 if __name__ == '__main__':
     client = MongoClient(cnx.URI);
     db = client.test1

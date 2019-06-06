@@ -1,202 +1,160 @@
 var columnDefs = [
-    {headerName: "Athlete", field: "athlete"},
-    {headerName: "Country", field: "country", rowGroup: true, hide: true},
-    {headerName: "Year", field: "year"},
-    {headerName: "Sport", field: "sport"},
-    {headerName: "Gold", field: "gold"},
-    {headerName: "Silver", field: "silver"},
-    {headerName: "Bronze", field: "bronze"}
+
+  // these are the row groups, so they are all hidden (they are shown in the group column)
+  {headerName: 'Hierarchy', children: [
+      {headerName: 'Product', field: 'PRODUCT', type: 'dimension', rowGroupIndex: 0, hide: true},
+      {headerName: 'Portfolio', field: 'PORTFOLIO', type: 'dimension', rowGroupIndex: 1, hide: true},
+      {headerName: 'Book', field: 'BOOK', type: 'dimension', rowGroupIndex: 2, hide: true},
+    ]},
+
+  // some string values, that do not get aggregated
+  {headerName: 'Attributes', children: [
+    {headerName: 'Trade', field: 'TRADEID', width: 100, type: 'dimension',
+      filter: "agNumberColumnFilter",
+      filterParams: {
+        applyButton: true,
+        newRowsAction: 'keep'
+      }
+    },
+    {
+      headerName: 'Deal Type', field: 'DEALTYPE', type: 'dimension',
+      filter: 'agSetColumnFilter',
+      filterParams: {
+        values: ['Financial', 'Physical'],
+        newRowsAction: 'keep'
+      }
+    },
+    {headerName: 'Bid', field: 'BIDTYPE', type: 'dimension', width: 100, filter: 'agSetColumnFilter',
+      filterParams: {
+        values: ['Buy', 'Sell'],
+        newRowsAction: 'keep'
+      }
+    }
+  ]},
+
+  // all the other columns (visible and not grouped)
+  {headerName: 'Values', children: [
+    {headerName: 'Current', field: 'CURRENTVALUE', type: 'measure'},
+      {headerName: 'Previous', field: 'PREVIOUSVALUE', type: 'measure'},
+      {headerName: 'PL 1', field: 'PL1', type: 'measure'},
+      {headerName: 'PL 2', field: 'PL2', type: 'measure'},
+      {headerName: 'Gain-DX', field: 'GAINDX', type: 'measure'},
+      {headerName: 'SX / PX', field: 'SXPX', type: 'measure'},
+      {headerName: '99 Out', field: 'X99OUT', type: 'measure'}
+  ]}
 ];
 
-var gridOptions = {
-    defaultColDef: {
-        width: 100,
-        sortable: true,
-        resizable: true
+let gridOptions = {
+  columnTypes: {
+    dimension: {
+      enableRowGroup: true,
+      enablePivot: true,
     },
-    autoGroupColumnDef: {
-        width: 150
-    },
-    columnDefs: columnDefs,
-    rowModelType: 'serverSide',
-    rowGroupPanelShow: 'never',
-    functionsReadOnly: true,
-    sideBar: {
-        toolPanels: [{
-            id: 'columns',
-            labelDefault: 'Columns',
-            labelKey: 'columns',
-            iconKey: 'columns',
-            toolPanel: 'agColumnsToolPanel',
-            toolPanelParams: {
-                suppressPivots: true,
-                suppressPivotMode: true,
-                suppressValues: true
-            }
-        }]
-    },
-    animateRows: true,
-    debug: true,
-    pagination: true,
-    paginationAutoPageSize: true
+    measure: {
+      width: 150,
+      aggFunc: 'sum',
+      enableValue: true,
+      cellClass: 'number',
+      valueFormatter: numberCellFormatter,
+      cellRenderer:'agAnimateShowChangeCellRenderer',
+      allowedAggFuncs: ['avg','sum','min','max'],
+      cellClassRules: {'negative': 'x < 0'}
+    }
+  },
+  autoGroupColumnDef: {
+    headerName: 'Hierarchy',
+    width: 250
+  },
+  enableSorting: true,
+  enableFilter: true,
+  columnDefs: columnDefs,
+  enableColResize: true,
+  rowModelType: 'enterprise',
+  cacheBlockSize: 100,
+  rowGroupPanelShow: 'always',
+  pivotPanelShow: 'always',
+  suppressAggFuncInHeader: true,
+  animateRows: false
+};
+
+function EnterpriseDatasource() {}
+
+EnterpriseDatasource.prototype.getRows = function (params) {
+  let jsonRequest = JSON.stringify(params.request, null, 2);
+  console.log(jsonRequest);
+
+  let httpRequest = new XMLHttpRequest();
+  httpRequest.open('POST', '/getRows');
+  httpRequest.setRequestHeader("Content-type", "application/json");
+  httpRequest.send(jsonRequest);
+  httpRequest.onreadystatechange = () => {
+    if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+      let result = JSON.parse(httpRequest.responseText);
+      params.successCallback(result.data, result.lastRow);
+
+      updateSecondaryColumns(params.request, result);
+    }
+  };
 };
 
 // setup the grid after the page has finished loading
 document.addEventListener('DOMContentLoaded', function () {
-    var gridDiv = document.querySelector('#myGrid');
-    new agGrid.Grid(gridDiv, gridOptions);
-
-    // do http request to get our sample data - not using any framework to keep the example self contained.
-    // you will probably use a framework like JQuery, Angular or something else to do your HTTP calls.
-    agGrid.simpleHttpRequest({url: 'https://raw.githubusercontent.com/ag-grid/ag-grid/master/packages/ag-grid-docs/src/olympicWinners.json'})
-        .then(function (data) {
-                var fakeServer = createFakeServer(data);
-                var datasource = createServerSideDatasource(fakeServer);
-                gridOptions.api.setServerSideDatasource(datasource);
-            }
-        );
+  let gridDiv = document.querySelector('#myGrid');
+  new agGrid.Grid(gridDiv, gridOptions);
+  gridOptions.api.setEnterpriseDatasource(new EnterpriseDatasource());
 });
 
+let updateSecondaryColumns = function (request, result) {
+  let valueCols = request.valueCols;
+  if (request.pivotMode && request.pivotCols.length > 0) {
+    let secondaryColDefs = createSecondaryColumns(result.secondaryColumnFields, valueCols);
+    gridOptions.columnApi.setSecondaryColumns(secondaryColDefs);
+  } else {
+    gridOptions.columnApi.setSecondaryColumns([]);
+  }
+};
 
-function createServerSideDatasource(fakeServer) {
-    function ServerSideDatasource(fakeServer) {
-        this.fakeServer = fakeServer;
+let createSecondaryColumns = function (fields, valueCols) {
+  let secondaryCols = [];
+
+  function addColDef(colId, parts, res) {
+    if (parts.length === 0) return [];
+
+    let first = parts.shift();
+    let existing = res.find(r => r.groupId === first);
+
+    if (existing) {
+      existing['children'] = addColDef(colId, parts, existing.children);
+    } else {
+      let colDef = {};
+      let isGroup = parts.length > 0;
+      if(isGroup) {
+        colDef['groupId'] = first;
+        colDef['headerName'] = first;
+      } else {
+        let valueCol = valueCols.find(r => r.field === first);
+
+        colDef['colId'] = colId;
+        colDef['headerName'] =  valueCol.displayName;
+        colDef['field'] = colId;
+        colDef['type'] = 'measure';
+      }
+
+      let children = addColDef(colId, parts, []);
+      children.length > 0 ? colDef['children'] = children : null;
+
+      res.push(colDef);
     }
 
-    ServerSideDatasource.prototype.getRows = function (params) {
-        console.log('ServerSideDatasource.getRows: params = ', params);
+    return res;
+  }
 
-        var request = params.request;
+  fields.sort();
+  fields.forEach(field => addColDef(field, field.split('_'), secondaryCols));
+  return secondaryCols;
+};
 
-        // if we are on the top level, then group keys will be [],
-        // if we are on the second level, then group keys will be like ['United States']
-        var groupKeys = request.groupKeys;
-        var doingTopLevel = groupKeys.length === 0;
-
-        if (doingTopLevel) {
-            this.fakeServer.getTopLevelCountryList(successCallback, request);
-        } else {
-            var country = request.groupKeys[0];
-            this.fakeServer.getCountryDetails(successCallback, country, request);
-        }
-
-        function successCallback(resultForGrid, lastRow) {
-            params.successCallback(resultForGrid, lastRow);
-        }
-    };
-
-    return new ServerSideDatasource(fakeServer)
-}
-
-function createFakeServer(data) {
-    function FakeServer(allData) {
-        this.initData(allData);
-    }
-
-    FakeServer.prototype.initData = function(allData) {
-        var topLevelCountryGroups = [];
-        var bottomLevelCountryDetails = {}; // will be a map of [country name => records]
-
-        allData.forEach( function(dataItem) {
-            // get country this item is for
-            var country = dataItem.country;
-
-            // get the top level group for this country
-            var childrenThisCountry = bottomLevelCountryDetails[country];
-            var groupThisCountry = _.find(topLevelCountryGroups, {country: country});
-            if (!childrenThisCountry) {
-                // no group exists yet, so create it
-                childrenThisCountry = [];
-                bottomLevelCountryDetails[country] = childrenThisCountry;
-
-                // add a group to the top level
-                groupThisCountry = {country: country, gold: 0, silver: 0, bronze: 0};
-                topLevelCountryGroups.push(groupThisCountry);
-            }
-
-            // add this record to the county group
-            childrenThisCountry.push(dataItem);
-
-            // increment the group sums
-            groupThisCountry.gold += dataItem.gold;
-            groupThisCountry.silver += dataItem.silver;
-            groupThisCountry.bronze += dataItem.bronze;
-        });
-
-        this.topLevelCountryGroups = topLevelCountryGroups;
-        this.bottomLevelCountryDetails = bottomLevelCountryDetails;
-
-        this.topLevelCountryGroups.sort(function(a,b) { return a.country < b.country ? -1 : 1; });
-    };
-
-    FakeServer.prototype.sortList = function(data, sortModel) {
-        var sortPresent = sortModel && sortModel.length > 0;
-        if (!sortPresent) {
-            return data;
-        }
-        // do an in memory sort of the data, across all the fields
-        var resultOfSort = data.slice();
-        resultOfSort.sort(function(a,b) {
-            for (var k = 0; k<sortModel.length; k++) {
-                var sortColModel = sortModel[k];
-                var valueA = a[sortColModel.colId];
-                var valueB = b[sortColModel.colId];
-                // this filter didn't find a difference, move onto the next one
-                if (valueA==valueB) {
-                    continue;
-                }
-                var sortDirection = sortColModel.sort === 'asc' ? 1 : -1;
-                if (valueA > valueB) {
-                    return sortDirection;
-                } else {
-                    return sortDirection * -1;
-                }
-            }
-            // no filters found a difference
-            return 0;
-        });
-        return resultOfSort;
-    };
-
-// when looking for the top list, always return back the full list of countries
-    FakeServer.prototype.getTopLevelCountryList = function(callback, request) {
-
-        var lastRow = this.getLastRowResult(this.topLevelCountryGroups, request);
-        var rowData = this.getBlockFromResult(this.topLevelCountryGroups, request);
-
-        // put the response into a timeout, so it looks like an async call from a server
-        setTimeout( function() {
-            callback(rowData, lastRow);
-        }, 1000);
-    };
-
-    FakeServer.prototype.getCountryDetails = function(callback, country, request) {
-
-        var countryDetails = this.bottomLevelCountryDetails[country];
-
-        var countryDetailsSorted = this.sortList(countryDetails, request.sortModel);
-
-        var lastRow = this.getLastRowResult(countryDetailsSorted, request);
-        var rowData = this.getBlockFromResult(countryDetailsSorted, request);
-
-        // put the response into a timeout, so it looks like an async call from a server
-        setTimeout( function() {
-            callback(rowData, lastRow);
-        }, 1000);
-    };
-
-    FakeServer.prototype.getBlockFromResult = function(data, request) {
-        return data.slice(request.startRow, request.endRow);
-    };
-
-    FakeServer.prototype.getLastRowResult = function(result, request) {
-        // we mimic finding the last row. if the request exceeds the length of the
-        // list, then we assume the last row is found. this would be similar to hitting
-        // a database, where we have gone past the last row.
-        var lastRowFound = (result.length <= request.endRow);
-        var lastRow = lastRowFound ? result.length : null;
-        return lastRow;
-    };
-
-    return new FakeServer(data);
+function numberCellFormatter(params) {
+  let formattedNumber = Math.floor(Math.abs(params.value)).toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
+  return params.value < 0 ? '(' + formattedNumber + ')' : formattedNumber;
 }
