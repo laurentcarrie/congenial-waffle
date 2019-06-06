@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script-->
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.min.noStyle.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-balham.css">
+</head>
+<body>
+
+
+  <h1>sample size : {{sample_size}}</h1>
+  <h1>nb added cols : {{added_cols}}</h1>
+
+
+  <div id="myGrid" style="height: 600px;width:500px;" class="ag-theme-balham"></div>
+
+  <script type="text/javascript" charset="utf-8">
+    // specify the columns
+    var columnDefs = [
+      {headerName: "Make", field: "make",sortable:true,filter:true,rowGroup:true},
+      {headerName: "Model", field: "model",sortable:true,filter:true,rowGroup:true},
+      {headerName: "Price", field: "price",sortable:true,filter:true,aggFunc:'sum'},
+        {% for i in addCols %}
+      {headerName: "Price_{{i}}", field: "price_{{i}}",sortable:true,filter:true},
+    {% endfor %}
+
+    ];
+    var autoGroupColumnDef = {
+    headerName: "Model",
+    field: "model",
+    cellRenderer:'agGroupCellRenderer',
+    cellRendererParams: {
+        checkbox: true
+    }
+}
+
+// let the grid know which columns and what data to use
+var gridOptions = {
+    columnDefs: columnDefs,
+    autoGroupColumnDef: autoGroupColumnDef,
+    groupSelectsChildren: true,
+    rowSelection: 'multiple'
+};
+    // specify the data
+    var rowData = [
+        {% for car in cars %}
+      {make: "{{car.make}}", model: "{{ car.model }}", price: {{car.price}},
+          {% for i in addCols %}
+          price_{{i}}: "{{car.price}}",
+          {% endfor %}
+          },
+      {% endfor %}
+
+    ];
+
+    // let the grid know which columns and what data to use
+    var gridOptions = {
+      columnDefs: columnDefs,
+      rowData: rowData
+    };
+
+  // lookup the container we want the Grid to use
+  var eGridDiv = document.querySelector('#myGrid');
+
+  // create the grid passing in the div to use together with the columns & data we want to use
+  new agGrid.Grid(eGridDiv, gridOptions);
+
+  </script>
+</body>
+</html>
