@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, stream_with_context
+from flask import Flask, render_template, request
 import json
 from flask import Response
 import logging
@@ -7,9 +7,9 @@ import datetime
 from pymongo import MongoClient
 from bson.code import Code
 
-import cnx
+from v1 import cnx
 
-from model import Car
+from v1.model import Car
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

@@ -1,7 +1,7 @@
 import random
-import cnx
+from v1 import cnx
 from pymongo import MongoClient
-import json
+
 
 class Car:
     def __init__(self, *args,**kwargs):
