@@ -1,9 +1,7 @@
 from flask import Flask, render_template, request, stream_with_context
 import json
-
-from flask_marshmallow import Marshmallow
-
 from flask import Response
+import logging
 
 import datetime
 from pymongo import MongoClient
@@ -12,10 +10,21 @@ import cnx
 
 from model import Car
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+# create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
+
 
 app = Flask(__name__)
-
-ma = Marshmallow(app)
 
 added_cols = 20
 
@@ -33,7 +42,7 @@ names = ['pomme', 'poire', 'orange']
 @app.route('/demo')
 def demo():
     t1 = datetime.datetime.now()
-    cars = app.db.find(limit=100000000)
+    cars = app.db.find(filter={"price":"{$lt:10000.7}"},limit=100000000)
     cars = [ Car(c) for c in cars]
     added_cols=20
     page = render_template('demo.html', added_cols=added_cols, names=names, cars=cars,
@@ -55,6 +64,7 @@ def demo2():
 def return_data():
     limit = request.args.get('limit')
     limit=int(limit)
+    #sample = app.db.find({"price": {"$lt": 10000.1}},limit=limit)
     sample = app.db.find(limit=limit)
 
     #data = json.dumps(data)
@@ -75,6 +85,6 @@ if __name__ == '__main__':
     db = client.test1.cars
     #sample = db.find_one({'listing_url': 'https://www.airbnb.com/rooms/10006546'})
     #print(sample)
-    print("Connection Successful")
+    logger.info("Connection to {0} Successful".format(cnx.URI))
     app.db = db
     app.run()

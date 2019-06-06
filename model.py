@@ -66,7 +66,7 @@ class Car:
                 }
 
     def write(self, db):
-        data = self.to_json()
+        data = self.to_dict()
         db.insert_one(data)
 
 
