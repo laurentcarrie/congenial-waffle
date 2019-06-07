@@ -27,7 +27,7 @@ MakeCellRenderer.prototype.init = function(params) {
     }
 
 
-    this.eValue.innerHTML = '<span >' + '<img class="flag" border="0" with="15" height="10" src="https://flags.fmcdn.net/data/flags/mini/' + country + '.png">     ' +
+    this.eValue.innerHTML = '<span >' + '<img class="flag" border="0" with="15" height="10" src="https://flags.fmcdn.net/data/flags/mini/' + country + '.png">                            ' +
         (params.valueFormatted ? params.valueFormatted : params.value) + '</span>';
 
     // add event listener to button
