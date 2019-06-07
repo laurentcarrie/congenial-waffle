@@ -1,6 +1,11 @@
 // function to act as a class
 function MoneyCellRenderer () {}
 
+
+function moneyCellFormatter(params) {
+  let formattedNumber = Math.floor(params.value).toString() + ' &euro;';
+  return formattedNumber;
+};
 // gets called once before the renderer is used
 MoneyCellRenderer.prototype.init = function(params) {
     // create the cell
@@ -13,12 +18,16 @@ MoneyCellRenderer.prototype.init = function(params) {
     this.eValue = this.eGui.querySelector('.my-value');
 
     // set value into cell
-    color1 = 222222
-    color2 = 888888
+    color1 = parseInt('00FFFF',16) ;
+    color2 = parseInt('FFFFFF',16) ;
     k = ( params.value - 10000) / ( 20000 - 10000 )
-    color = Math.floor(color1 + k * ( color2 - color1 ))
+    color = Math.floor(color1 + k * ( color2 - color1 )) ;
+    color=color.toString(16) ;
 
-    this.eValue.innerHTML = '<span style="color:#' + color + '">' + (params.valueFormatted ? params.valueFormatted : params.value) + '</span>';
+    arrow = "&#x" + (Math.floor(Math.random()*8) + (parseInt('00e1',16))).toString(16) + ";";
+
+    this.eValue.innerHTML = '<span style="color:#' + color + ';font-family:' +"'"+ "Wingdings 3" + "'" + '">' + arrow +'  </span>' + (params.valueFormatted ? params.valueFormatted : params.value) ;
+   // this.eValue.innerHTML = '<span style="font-family:Webdings">&#x007b;  </span>' + (params.valueFormatted ? params.valueFormatted : params.value) ;
 
     // add event listener to button
     //this.eventListener = function() {

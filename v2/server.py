@@ -16,7 +16,7 @@ logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 # create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s')
 
 # add formatter to ch
 ch.setFormatter(formatter)
@@ -28,72 +28,20 @@ app = Flask(__name__)
 
 added_cols = 20
 
-
-@app.route('/')
-def display():
-    page = render_template('index.html')
-    return page
-
-def getRows_1():
-    # level 1
-{
-  "startRow": 0,
-  "endRow": 1000,
-  "rowGroupCols": [
-    {
-      "id": "make",
-      "displayName": "make",
-      "field": "make"
-    }
-  ],
-  "valueCols": [
-    {
-      "id": "price",
-      "aggFunc": "sum",
-      "displayName": "price",
-      "field": "price"
-    }
-  ],
-  "pivotCols": [],
-  "pivotMode": false,
-  "groupKeys": [],
-  "filterModel": {},
-  "sortModel": []
-}
-
-def dispatch(requete):
-    if (len(requete["rowGroupCols"]) == 1 and requete["rowGroupCols"][0]["id"]=="make" and len(requete["valueCols"])==1
-        and requete["valueCols"][0]["id"]=="price"
-        and requete["pivotCols"]==[]
-        and requete["pivotMode"]==False
-        and requete["filterModel"]==[]
-        and requete["sortModel"]==[]) :
-        return getRows_1(requete)
-    raise Exception('request not managed')
-
-
-def getRows_2(j):
-
-
-@app.route('/getRows', methods=['POST'])
-def getRows():
-    j = request.get_json()
-    method = dispatch(j)
-    return method()
-
+def getRows_1(j):
     startRow = j['startRow']
     endRow = j['endRow']
     logger.info("get row from {0} to {1}".format(startRow,endRow))
 
-    rowGroupId = j['rowGroupCols'][0]['id']
-    logger.info("group on {0}".format(rowGroupId))
-    #db.getCollection('cars').aggregate([{$group: {_id: "$make", total: {$sum: "$price"}}}])
+    # db.getCollection('cars').aggregate([{$group: {_id: "$make", total: {$sum: "$price"}}}])
     # sample = app.db.find({"price": {"$lt": 10000.1}},limit=limit)
-    sample = app.db.cars.find(limit=endRow-startRow).skip(startRow)
+    # sample = app.db.cars.find(limit=endRow-startRow).skip(startRow)
+    sample = app.db.cars.aggregate([{"$group": {"_id": "$make", "price": {"$sum": "$price"}}}])
 
     # data = json.dumps(data)
     # return flask.Response(flask.stream_with_context(generate()))
     def generate():
+        count = 0
         yield '{ "data":'
         yield '['
         not_first = False
@@ -101,11 +49,137 @@ def getRows():
             if not_first:
                 yield ','
             not_first = True
-            yield json.dumps(Car(s).to_dict())
+            d = { "make":s["_id"],"price":s["price"]}
+            yield json.dumps(d)
+            count = count + 1
         yield ']'
+        yield ',"lastRow":' + str(count+startRow)
         yield '}'
 
-    return Response(generate(), mimetype="text/json")
+    def ret():
+        return Response(generate(), mimetype="text/json")
+    return ret
+
+def getRows_2(j):
+    startRow = j['startRow']
+    endRow = j['endRow']
+    groupKeys = j['groupKeys'][0]
+    logger.info("get row from {0} to {1}".format(startRow,endRow))
+
+    # db.getCollection('cars').aggregate([{$group: {_id: "$make", total: {$sum: "$price"}}}])
+    # sample = app.db.find({"price": {"$lt": 10000.1}},limit=limit)
+    # sample = app.db.cars.find(limit=endRow-startRow).skip(startRow)
+    sample = app.db.cars.find({"make":groupKeys}).skip(startRow).limit(endRow-startRow)
+
+    # data = json.dumps(data)
+    # return flask.Response(flask.stream_with_context(generate()))
+    def generate():
+        count = 0
+        yield '{ "data":'
+        yield '['
+        not_first = False
+        for s in sample:
+            if not_first:
+                yield ','
+            not_first = True
+            d = { "make":s["make"],"model":s["model"],"price":s["price"],"index":s["index"]}
+            yield json.dumps(d)
+            count = count + 1
+        yield ']'
+#        yield ',"lastRow":' + str(count+startRow)
+        yield '}'
+
+    def ret():
+        return Response(generate(), mimetype="text/json")
+    return ret
+
+def getRows_3(j):
+    startRow = j['startRow']
+    endRow = j['endRow']
+    logger.info("get row from {0} to {1}".format(startRow,endRow))
+
+    # db.getCollection('cars').aggregate([{$group: {_id: "$make", total: {$sum: "$price"}}}])
+    # sample = app.db.find({"price": {"$lt": 10000.1}},limit=limit)
+    # sample = app.db.cars.find(limit=endRow-startRow).skip(startRow)
+    sample = app.db.cars.find().skip(startRow).limit(endRow-startRow)
+
+    # data = json.dumps(data)
+    # return flask.Response(flask.stream_with_context(generate()))
+    def generate():
+        count = 0
+        yield '{ "data":'
+        yield '['
+        not_first = False
+        for s in sample:
+            if not_first:
+                yield ','
+            not_first = True
+            d = { "make":s["make"],"model":s["model"],"price":s["price"],"index":s["index"]}
+            yield json.dumps(d)
+            count = count + 1
+        yield ']'
+#        yield ',"lastRow":' + str(count+startRow)
+        yield '}'
+
+    def ret():
+        return Response(generate(), mimetype="text/json")
+    return ret
+
+def dispatch(requete):
+    if (
+        len(requete["groupKeys"]) == 0 and
+        len(requete["rowGroupCols"]) == 1
+        and requete["rowGroupCols"][0]["id"]=="make"
+        and len(requete["valueCols"])==1
+        and requete["valueCols"][0]["id"]=="price"
+        and requete["pivotCols"]==[]
+        and requete["pivotMode"]==False
+        and requete["filterModel"]=={}
+        and requete["sortModel"]==[]
+        ) :
+        return getRows_1(requete)
+
+    elif (
+        len(requete["groupKeys"]) == 1
+        and len(requete["rowGroupCols"]) == 1
+        and requete["rowGroupCols"][0]["id"] == "make"
+        and len(requete["valueCols"]) == 1
+        and requete["valueCols"][0]["id"] == "price"
+        and requete["pivotCols"] ==[]
+        and requete["pivotMode"] == False
+        and requete["filterModel"] == {}
+        and requete["sortModel"] ==[]
+        ):
+        return getRows_2(requete)
+    elif (
+        len(requete["groupKeys"]) == 0
+        and len(requete["rowGroupCols"]) == 0
+        and len(requete["valueCols"])==1
+        and requete["valueCols"][0]["id"]=="price"
+        and requete["pivotCols"]==[]
+        and requete["pivotMode"]==False
+        and requete["filterModel"]=={}
+        and requete["sortModel"]==[]
+        ) :
+        return getRows_3(requete)
+
+
+
+    app.logger.error(requete)
+    raise Exception('request not managed')
+
+
+@app.route('/')
+def display():
+    page = render_template('index.html')
+    return page
+
+@app.route('/getRows', methods=['POST'])
+def getRows():
+    j = request.get_json()
+    app.logger.info(j)
+    method = dispatch(j)
+    return method()
 
 
 if __name__ == '__main__':

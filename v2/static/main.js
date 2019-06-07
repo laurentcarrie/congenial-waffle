@@ -11,6 +11,7 @@ var columnDefs = [
 
 ];
 
+
 let gridOptions = {
   columnTypes: {
     dimension: {
@@ -51,11 +52,11 @@ let gridOptions = {
   columnDefs: columnDefs,
   enableColResize: true,
   rowModelType: 'enterprise',
-  cacheBlockSize: 1000,
+  cacheBlockSize: 10,
   rowGroupPanelShow: 'always',
   pivotPanelShow: 'always',
-  suppressAggFuncInHeader: true,
-  animateRows: false
+  suppressAggFuncInHeader: false,
+  animateRows: true
 };
 
 function EnterpriseDatasource() {}
@@ -138,9 +139,4 @@ let createSecondaryColumns = function (fields, valueCols) {
 function numberCellFormatter(params) {
   let formattedNumber = Math.floor(Math.abs(params.value)).toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
   return params.value < 0 ? '(' + formattedNumber + ')' : formattedNumber;
-};
-
-function moneyCellFormatter(params) {
-  let formattedNumber = Math.floor(params.value).toString() + ' euros';
-  return formattedNumber;
 };
