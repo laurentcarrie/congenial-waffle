@@ -5,17 +5,13 @@ from pymongo import MongoClient
 
 class Car:
     def __init__(self, *args,**kwargs):
-        self.make = None
-        self.model = None
-        self.price = None
 
         if len(args) > 0:
             kwargs=args[0]
 
-        if 'make' in kwargs.keys():
-            self.make = kwargs['make']
-        if 'model' in kwargs.keys():
-            self.model = kwargs['model']
+        for key in kwargs:
+            self.__setattr__(key,kwargs[key])
+
         if 'price' in kwargs.keys():
             self.price = kwargs['price']
             self.price_1 = kwargs['price']
@@ -41,7 +37,7 @@ class Car:
 
 
     def to_dict(self):
-        return {"make": self.make, "model": self.model,
+        return {"index":self.index,"make": self.make, "model": self.model,
                 "price": self.price,
                 "price_1": self.price,
                 "price_2": self.price,
@@ -87,5 +83,5 @@ if __name__ == '__main__':
         make = random.choice(list(makes.keys()))
         model = random.choice(makes[make])
         price = 10000 + random.random() * 10000
-        car = Car(make=make, model=model, price=price)
+        car = Car(index=i,make=make, model=model, price=price)
         car.write(db)

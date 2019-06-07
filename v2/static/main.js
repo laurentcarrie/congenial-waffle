@@ -1,47 +1,14 @@
+
+
 var columnDefs = [
 
   // these are the row groups, so they are all hidden (they are shown in the group column)
-  {headerName: 'Hierarchy', children: [
-      {headerName: 'Product', field: 'PRODUCT', type: 'dimension', rowGroupIndex: 0, hide: true},
-      {headerName: 'Portfolio', field: 'PORTFOLIO', type: 'dimension', rowGroupIndex: 1, hide: true},
-      {headerName: 'Book', field: 'BOOK', type: 'dimension', rowGroupIndex: 2, hide: true},
-    ]},
 
-  // some string values, that do not get aggregated
-  {headerName: 'Attributes', children: [
-    {headerName: 'Trade', field: 'TRADEID', width: 100, type: 'dimension',
-      filter: "agNumberColumnFilter",
-      filterParams: {
-        applyButton: true,
-        newRowsAction: 'keep'
-      }
-    },
-    {
-      headerName: 'Deal Type', field: 'DEALTYPE', type: 'dimension',
-      filter: 'agSetColumnFilter',
-      filterParams: {
-        values: ['Financial', 'Physical'],
-        newRowsAction: 'keep'
-      }
-    },
-    {headerName: 'Bid', field: 'BIDTYPE', type: 'dimension', width: 100, filter: 'agSetColumnFilter',
-      filterParams: {
-        values: ['Buy', 'Sell'],
-        newRowsAction: 'keep'
-      }
-    }
-  ]},
+      {headerName: 'index', field: 'index'},
+      {headerName: 'make', field: 'make'},
+      {headerName: 'model', field: 'model'},
+      {headerName: 'price', field: 'price',type:'money'},
 
-  // all the other columns (visible and not grouped)
-  {headerName: 'Values', children: [
-    {headerName: 'Current', field: 'CURRENTVALUE', type: 'measure'},
-      {headerName: 'Previous', field: 'PREVIOUSVALUE', type: 'measure'},
-      {headerName: 'PL 1', field: 'PL1', type: 'measure'},
-      {headerName: 'PL 2', field: 'PL2', type: 'measure'},
-      {headerName: 'Gain-DX', field: 'GAINDX', type: 'measure'},
-      {headerName: 'SX / PX', field: 'SXPX', type: 'measure'},
-      {headerName: '99 Out', field: 'X99OUT', type: 'measure'}
-  ]}
 ];
 
 let gridOptions = {
@@ -59,12 +26,19 @@ let gridOptions = {
       cellRenderer:'agAnimateShowChangeCellRenderer',
       allowedAggFuncs: ['avg','sum','min','max'],
       cellClassRules: {'negative': 'x < 0'}
+    },
+    money: {
+      width: 150,
+      aggFunc: 'sum',
+      enableValue: true,
+      cellClass: 'number',
+      valueFormatter: moneyCellFormatter,
+      cellRenderer:MoneyCellRenderer,
+      allowedAggFuncs: ['avg','sum','min','max'],
+      cellClassRules: {'negative': 'x < 0'}
     }
   },
-  autoGroupColumnDef: {
-    headerName: 'Hierarchy',
-    width: 250
-  },
+
   enableSorting: true,
   enableFilter: true,
   columnDefs: columnDefs,
@@ -157,4 +131,9 @@ let createSecondaryColumns = function (fields, valueCols) {
 function numberCellFormatter(params) {
   let formattedNumber = Math.floor(Math.abs(params.value)).toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
   return params.value < 0 ? '(' + formattedNumber + ')' : formattedNumber;
-}
+};
+
+function moneyCellFormatter(params) {
+  let formattedNumber = Math.floor(params.value).toString() + ' euros';
+  return formattedNumber;
+};

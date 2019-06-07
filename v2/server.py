@@ -39,13 +39,16 @@ def getRows():
     j = request.get_json()
     startRow = j['startRow']
     endRow = j['endRow']
+    logger.info("get row from {0} to {1}".format(startRow,endRow))
+
 
     # sample = app.db.find({"price": {"$lt": 10000.1}},limit=limit)
-    sample = app.db.cars.find(limit=endRow)
+    sample = app.db.cars.find(limit=endRow-startRow).skip(startRow)
 
     # data = json.dumps(data)
     # return flask.Response(flask.stream_with_context(generate()))
     def generate():
+        yield '{ "data":'
         yield '['
         not_first = False
         for s in sample:
@@ -54,6 +57,7 @@ def getRows():
             not_first = True
             yield json.dumps(Car(s).to_dict())
         yield ']'
+        yield '}'
 
     return Response(generate(), mimetype="text/json")
 

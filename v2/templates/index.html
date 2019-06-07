@@ -3,13 +3,22 @@
 <head>
 <script> var __basePath = ''; </script>
 <style> html, body { margin: 0; padding: 0; height: 100%; } </style>
+
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
     <script src="https://unpkg.com/ag-grid-enterprise@21.0.0/dist/ag-grid-enterprise.min.js"></script></head>
 <body>
 
-<div id="myGrid" style="height: 100%;" class="ag-theme-balham-dark"></div>
+<style type="text/css">
+    .x-high { color: hotpink ;}
+    .x-ok { color:greenyellow;}
+    .x-low { color: brown  ;}
+</style>
 
-    <script src="../static/main.js"></script>
-    <script src="../static/mockServerSimple.js"></script>
+<H1 class="x">hello</H1>
+
+<div id="myGrid" style="height: 100%;" class="ag-theme-balham-dark"></div>
+    <script src="/static/moneyCellRenderer.js"></script>
+    <script src="/static/main.js"></script>
 </body>
 </html>
+
