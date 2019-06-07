@@ -5,7 +5,7 @@ var columnDefs = [
   // these are the row groups, so they are all hidden (they are shown in the group column)
 
       {headerName: 'index', field: 'index'},
-      {headerName: 'make', field: 'make'},
+      {headerName: 'make', field: 'make',rowGroup:true},
       {headerName: 'model', field: 'model'},
       {headerName: 'price', field: 'price',type:'money'},
 
@@ -44,7 +44,7 @@ let gridOptions = {
   columnDefs: columnDefs,
   enableColResize: true,
   rowModelType: 'enterprise',
-  cacheBlockSize: 100,
+  cacheBlockSize: 1000,
   rowGroupPanelShow: 'always',
   pivotPanelShow: 'always',
   suppressAggFuncInHeader: true,
