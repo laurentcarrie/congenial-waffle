@@ -5,7 +5,7 @@ var columnDefs = [
   // these are the row groups, so they are all hidden (they are shown in the group column)
 
       {headerName: 'index', field: 'index'},
-      {headerName: 'make', field: 'make'},
+      {headerName: 'make', field: 'make',rowGroup:true,type:'make'},
       {headerName: 'model', field: 'model'},
       {headerName: 'price', field: 'price',type:'money'},
 
@@ -36,6 +36,13 @@ let gridOptions = {
       cellRenderer:MoneyCellRenderer,
       allowedAggFuncs: ['avg','sum','min','max'],
       cellClassRules: {'negative': 'x < 0'}
+    },
+    make: {
+      width: 150,
+      enableValue: true,
+      cellClass: 'string',
+     // valueFormatter: moneyCellFormatter,
+      cellRenderer:MakeCellRenderer
     }
   },
 
