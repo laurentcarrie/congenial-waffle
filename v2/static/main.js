@@ -5,8 +5,8 @@ var columnDefs = [
   // these are the row groups, so they are all hidden (they are shown in the group column)
 
       {headerName: 'index', field: 'index'},
-      {headerName: 'make', field: 'make',rowGroup:true,type:'make'},
-      {headerName: 'model', field: 'model'},
+      {headerName: 'make', field: 'make',rowGroup:true,type:'make',enableRowGroup:true},
+      {headerName: 'model', field: 'model',rowGroup:true,enableRowGroup:true},
       {headerName: 'price', field: 'price',type:'money'},
 
 ];
@@ -70,11 +70,16 @@ EnterpriseDatasource.prototype.getRows = function (params) {
   httpRequest.setRequestHeader("Content-type", "application/json");
   httpRequest.send(jsonRequest);
   httpRequest.onreadystatechange = () => {
-    if (httpRequest.readyState === 4 && httpRequest.status === 200) {
-      let result = JSON.parse(httpRequest.responseText);
-      params.successCallback(result.data, result.lastRow);
+    if (httpRequest.readyState === 4 ) {
+      if (httpRequest.status === 200) {
+        let result = JSON.parse(httpRequest.responseText);
+        params.successCallback(result.data, result.lastRow);
 
-      updateSecondaryColumns(params.request, result);
+        updateSecondaryColumns(params.request, result);
+      }
+      else {
+        alert("erreur, code " + httpRequest.status)
+      }
     }
   };
 };
